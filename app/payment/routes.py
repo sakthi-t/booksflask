@@ -5,7 +5,7 @@ from app.payment import bp
 from app.models import User, Book, Cart, Order, OrderItem, Payment, GenreEnum
 from app import db, scheduler, csrf
 from app.config import Config
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 # Configure Stripe
@@ -144,19 +144,17 @@ def handle_successful_payment(session_data):
         # Calculate total
         total_amount = sum(cart_item.quantity * book.price for cart_item, book in cart_items)
         
-        # Create order
+        # Create order with 'in_progress' status
         order = Order(
             user_id=user_id,
             total_amount=total_amount,
-            status='in_progress'
+            status='in_progress'  # Orders start as 'in_progress'
         )
         db.session.add(order)
-        db.session.flush()  # Get order ID
+        db.session.flush()
         
         # Create order items and update stock
-        fiction_only = True
         for cart_item, book in cart_items:
-            # Create order item
             order_item = OrderItem(
                 order_id=order.id,
                 book_id=book.id,
@@ -164,13 +162,7 @@ def handle_successful_payment(session_data):
                 price=book.price
             )
             db.session.add(order_item)
-            
-            # Update stock
             book.stock -= cart_item.quantity
-            
-            # Check if order contains non-fiction
-            if book.genre != GenreEnum.FICTION:
-                fiction_only = False
         
         # Create payment record
         payment = Payment(
@@ -186,56 +178,12 @@ def handle_successful_payment(session_data):
         Cart.query.filter_by(user_id=user_id).delete()
         
         db.session.commit()
-        
-        # Schedule automatic status update
-        schedule_order_status_update(order.id, fiction_only)
+        print(f"✅ Order {order.id} created successfully - Status: in_progress")
         
     except Exception as e:
         db.session.rollback()
-        print(f"Error processing payment: {e}")
+        print(f"❌ Error processing payment: {e}")
 
-def schedule_order_status_update(order_id, fiction_only):
-    """Schedule order status update using APScheduler"""
-    if fiction_only:
-        # Fiction books - mark as delivered immediately
-        scheduler.add_job(
-            func=update_order_status_to_delivered,
-            trigger="date",
-            run_date=datetime.now(),
-            args=[order_id],
-            id=f'deliver_order_{order_id}'
-        )
-    else:
-        # Non-fiction books - mark as delayed immediately
-        scheduler.add_job(
-            func=update_order_status_to_delayed,
-            trigger="date",
-            run_date=datetime.now(),
-            args=[order_id],
-            id=f'delay_order_{order_id}'
-        )
-
-def update_order_status_to_delivered(order_id):
-    """Update order status to delivered"""
-    try:
-        order = Order.query.get(order_id)
-        if order and order.status == 'in_progress':
-            order.status = 'delivered'
-            db.session.commit()
-            print(f"Order {order_id} marked as delivered")
-    except Exception as e:
-        print(f"Error updating order {order_id} to delivered: {e}")
-
-def update_order_status_to_delayed(order_id):
-    """Update order status to delayed"""
-    try:
-        order = Order.query.get(order_id)
-        if order and order.status == 'in_progress':
-            order.status = 'delayed'
-            db.session.commit()
-            print(f"Order {order_id} marked as delayed")
-    except Exception as e:
-        print(f"Error updating order {order_id} to delayed: {e}")
 
 @bp.route('/order-action/<int:order_id>', methods=['POST'])
 @login_required

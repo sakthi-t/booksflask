@@ -76,5 +76,5 @@ booksflask/
 
 
 apsheduler
-stripe listen --forward-to localhost:5000/stripe/webhook
+stripe listen --forward-to localhost:5000/payment/webhook
 
