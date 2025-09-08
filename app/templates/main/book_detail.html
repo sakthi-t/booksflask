@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}{{ book.title }} - BooksCart{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-4">
+            <img src="{{ book.image_url or 'https://picsum.photos/400/600?random=' + book.id|string }}" 
+                 class="img-fluid rounded shadow" alt="{{ book.title }}">
+        </div>
+        <div class="col-md-8">
+            <div class="book-details">
+                <h1>{{ book.title }}</h1>
+                <p class="lead text-muted">by {{ book.author }}</p>
+                <p class="text-muted mb-3">
+                <i class="fas fa-tag me-1"></i>
+                <strong>Genre:</strong> <span class="badge bg-primary">{{ book.genre.value if book.genre else 'N/A' }}</span>
+                </p>
+                
+                <div class="price-section mb-4">
+                    <h3 class="text-primary">${{ "%.2f"|format(book.price) }}</h3>
+                    <p class="text-muted">
+                        <i class="fas fa-box me-1"></i>
+                        {{ book.stock }} in stock
+                    </p>
+                </div>
+                
+                <div class="description mb-4">
+                    <h5>Description</h5>
+                    <p>{{ book.description or "No description available." }}</p>
+                </div>
+                
+                <div class="actions">
+                    <button class="btn btn-primary btn-lg me-2" onclick="addToCart({{ book.id }})">
+                        <i class="fas fa-cart-plus me-2"></i>Add to Cart
+                    </button>
+                    <button class="btn btn-outline-danger btn-lg" onclick="addToWishlist({{ book.id }})">
+                        <i class="fas fa-heart me-2"></i>Add to Wishlist
+                    </button>
+                </div>
+                
+                <div class="book-meta mt-4">
+                    <small class="text-muted">
+                        Added on {{ book.created_at.strftime('%B %d, %Y') }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-5">
+        <div class="col-12">
+            <a href="{{ url_for('main.books') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Books
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

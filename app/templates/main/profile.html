@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - BooksCart{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-4">
+            <!-- Profile Card -->
+            <div class="card shadow">
+                <div class="card-body text-center">
+                    <div class="profile-avatar mb-3">
+                        <i class="fas fa-user-circle fa-5x text-primary"></i>
+                    </div>
+                    <h4>{{ user.username }}</h4>
+                    <p class="text-muted">{{ user.email }}</p>
+                    <span class="badge bg-{{ 'danger' if user.role == 'admin' else 'primary' }}">
+                        {{ user.role.title() }}
+                    </span>
+                    <hr>
+                    <p class="small text-muted">
+                        Member since {{ user.created_at.strftime('%B %Y') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <!-- Profile Content -->
+            <div class="card shadow">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#orders">
+                                <i class="fas fa-shopping-bag me-1"></i>Orders
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#settings">
+                                <i class="fas fa-cog me-1"></i>Settings
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="card-body">
+                    <div class="tab-content">
+                        <!-- Orders Tab -->
+                        <div class="tab-pane fade show active" id="orders">
+                            <h5>Order History</h5>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                You haven't placed any orders yet. Start shopping to see your orders here!
+                            </div>
+                            <a href="{{ url_for('main.books') }}" class="btn btn-primary">
+                                <i class="fas fa-book me-2"></i>Browse Books
+                            </a>
+                        </div>
+                        
+                        <!-- Settings Tab -->
+                        <div class="tab-pane fade" id="settings">
+                            <h5>Account Settings</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Username:</strong> {{ user.username }}</p>
+                                    <p><strong>Email:</strong> {{ user.email }}</p>
+                                    <p><strong>Role:</strong> {{ user.role.title() }}</p>
+                                    {% if user.github_id %}
+                                        <p><strong>Connected:</strong> 
+                                            <i class="fab fa-github me-1"></i>GitHub
+                                        </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <hr>
+                            <button class="btn btn-warning" disabled>
+                                <i class="fas fa-edit me-2"></i>Edit Profile (Coming Soon)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

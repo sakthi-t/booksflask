@@ -1,0 +1,80 @@
+booksflask/
+├── app/
+│   ├── __init__.py                 # Flask app factory
+│   ├── models.py                   # Database models (User, Book, Order, Cart, etc.)
+│   ├── config.py                   # Configuration settings
+│   │
+│   ├── auth/                       # Authentication blueprint
+│   │   ├── __init__.py
+│   │   └── routes.py              # Login, signup, logout routes
+│   │
+│   ├── main/                       # Main application blueprint  
+│   │   ├── __init__.py
+│   │   └── routes.py              # Home, books, search routes
+│   │
+│   ├── shop/                       # Shopping functionality
+│   │   ├── __init__.py
+│   │   └── routes.py              # Cart, wishlist, checkout routes
+│   │
+│   ├── admin/                      # Admin panel blueprint
+│   │   ├── __init__.py
+│   │   └── routes.py              # Admin book management
+│   │
+│   ├── payment/                    # Payment processing
+│   │   ├── __init__.py
+│   │   └── routes.py              # Stripe/Razorpay integration
+│   │
+│   ├── chatbot/                    # Chatbot functionality
+│   │   ├── __init__.py
+│   │   └── routes.py              # Chat endpoints (session-based)
+│   │
+│   ├── templates/                  # HTML templates
+│   │   ├── base.html              # Base template with navbar
+│   │   ├── index.html             # Home page
+│   │   │
+│   │   ├── auth/                  # Authentication templates
+│   │   │   ├── login.html         # Login form
+│   │   │   └── signup.html        # Signup form
+│   │   │
+│   │   ├── shop/                  # Shopping templates
+│   │   │   ├── books.html         # All books page
+│   │   │   ├── book_detail.html   # Individual book page
+│   │   │   ├── cart.html          # Shopping cart
+│   │   │   ├── wishlist.html      # User wishlist
+│   │   │   └── checkout.html      # Checkout page
+│   │   │
+│   │   ├── admin/                 # Admin templates
+│   │   │   ├── dashboard.html     # Admin dashboard
+│   │   │   ├── add_book.html      # Add new book form
+│   │   │   ├── manage_books.html  # Edit/delete books
+│   │   │   └── orders.html        # View all orders
+│   │   │
+│   │   ├── payment/               # Payment templates
+│   │   │   ├── payment.html       # Payment form
+│   │   │   └── success.html       # Payment success page
+│   │   │
+│   │   └── chatbot/               # Chatbot templates
+│   │       └── chat.html          # Chat interface
+│   │
+│   └── static/                     # Static files
+│       ├── css/
+│       │   ├── bootstrap.min.css  # Bootstrap CSS
+│       │   └── custom.css         # Custom styles
+│       ├── js/
+│       │   ├── bootstrap.min.js   # Bootstrap JS
+│       │   ├── cart.js           # Cart functionality
+│       │   └── chatbot.js        # Chatbot frontend logic
+│       └── images/               # Book images, logos
+│
+├── migrations/                     # Alembic migration files
+├── instance/                       # Instance folder (SQLite file goes here)
+├── .env                           # Environment variables (local)
+├── .gitignore                     # Git ignore file
+├── requirements.txt               # Python dependencies
+├── run.py                         # Application entry point
+└── README.md                      # Project documentation
+
+
+apsheduler
+stripe listen --forward-to localhost:5000/stripe/webhook
+

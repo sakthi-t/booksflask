@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Shopping Cart - BooksCart{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-shopping-cart me-2"></i>Shopping Cart
+            </h2>
+            
+            {% if cart_items %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Book</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Total</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-items">
+                            {% for cart_item, book in cart_items %}
+                            <tr id="cart-row-{{ cart_item.id }}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ book.image_url or 'https://picsum.photos/80/120?random=' + book.id|string }}" 
+                                             class="me-3" style="width: 50px; height: 75px; object-fit: cover;">
+                                        <div>
+                                            <h6 class="mb-0">{{ book.title }}</h6>
+                                            <small class="text-muted">by {{ book.author }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>${{ "%.2f"|format(book.price) }}</td>
+                                <td>
+                                    <div class="input-group" style="width: 120px;">
+                                        <button class="btn btn-outline-secondary btn-sm" type="button" 
+                                                onclick="updateQuantity({{ cart_item.id }}, {{ cart_item.quantity - 1 }})">-</button>
+                                        <input type="text" class="form-control form-control-sm text-center" 
+                                               value="{{ cart_item.quantity }}" readonly>
+                                        <button class="btn btn-outline-secondary btn-sm" type="button" 
+                                                onclick="updateQuantity({{ cart_item.id }}, {{ cart_item.quantity + 1 }})">+</button>
+                                    </div>
+                                </td>
+                                <td id="item-total-{{ cart_item.id }}">${{ "%.2f"|format(cart_item.quantity * book.price) }}</td>
+                                <td>
+                                    <button class="btn btn-danger btn-sm" onclick="removeFromCart({{ cart_item.id }})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <button class="btn btn-warning" onclick="clearCart()">
+                            <i class="fas fa-trash me-2"></i>Clear Cart
+                        </button>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <h4>Total: $<span id="cart-total">{{ "%.2f"|format(total) }}</span></h4>
+                        <a href="{{ url_for('shop.checkout') }}" class="btn btn-success btn-lg">
+                            <i class="fas fa-credit-card me-2"></i>Proceed to Checkout
+                        </a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">Your cart is empty</h4>
+                    <p class="text-muted">Browse our collection and add some books!</p>
+                    <a href="{{ url_for('main.books') }}" class="btn btn-primary">
+                        <i class="fas fa-book me-2"></i>Browse Books
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function updateQuantity(cartId, newQuantity) {
+    if (newQuantity <= 0) {
+        removeFromCart(cartId);
+        return;
+    }
+    
+    fetch(`/shop/update-cart/${cartId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({quantity: newQuantity})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload(); // Simple reload for now
+        } else {
+            alert(data.message);
+        }
+    });
+}
+
+function removeFromCart(cartId) {
+    if (confirm('Remove this item from cart?')) {
+        fetch(`/shop/remove-from-cart/${cartId}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById(`cart-row-${cartId}`).remove();
+                updateCartCount(data.cart_count);
+                // Recalculate total (simple reload for now)
+                location.reload();
+            }
+        });
+    }
+}
+
+function clearCart() {
+    if (confirm('Clear all items from cart?')) {
+        fetch('/shop/clear-cart', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

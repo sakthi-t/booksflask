@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Orders - Admin{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-shopping-bag me-2"></i>Order Management
+            </h2>
+            
+            <!-- Status Filter -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <form method="GET" class="d-flex">
+                        <select class="form-select me-2" name="status" onchange="this.form.submit()">
+                            <option value="">All Status</option>
+                            <option value="pending" {{ 'selected' if status_filter == 'pending' }}>Pending</option>
+                            <option value="in_progress" {{ 'selected' if status_filter == 'in_progress' }}>In Progress</option>
+                            <option value="delivered" {{ 'selected' if status_filter == 'delivered' }}>Delivered</option>
+                            <option value="cancelled" {{ 'selected' if status_filter == 'cancelled' }}>Cancelled</option>
+                            <option value="delayed" {{ 'selected' if status_filter == 'delayed' }}>Delayed</option>
+                            <option value="refunded" {{ 'selected' if status_filter == 'refunded' }}>Refunded</option>
+                        </select>
+                    </form>
+                </div>
+            </div>
+            
+            {% if orders.items %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Customer</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders.items %}
+                            <tr>
+                                <td>#{{ order.id }}</td>
+                                <td>{{ order.user.username }}</td>
+                                <td>${{ "%.2f"|format(order.total_amount) }}</td>
+                                <td>
+                                    <span class="badge bg-{% if order.status == 'delivered' %}success{% elif order.status == 'cancelled' or order.status == 'refunded' %}danger{% elif order.status == 'delayed' %}warning{% else %}primary{% endif %}">
+                                        {{ order.status.title() }}
+                                    </span>
+                                </td>
+                                <td>{{ order.created_at.strftime('%m/%d/%Y %H:%M') }}</td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('admin.update_order_status', order_id=order.id) }}" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <select name="status" class="form-select form-select-sm d-inline w-auto" onchange="this.form.submit()">
+                                            <option value="pending" {{ 'selected' if order.status == 'pending' }}>Pending</option>
+                                            <option value="in_progress" {{ 'selected' if order.status == 'in_progress' }}>In Progress</option>
+                                            <option value="delivered" {{ 'selected' if order.status == 'delivered' }}>Delivered</option>
+                                            <option value="cancelled" {{ 'selected' if order.status == 'cancelled' }}>Cancelled</option>
+                                            <option value="delayed" {{ 'selected' if order.status == 'delayed' }}>Delayed</option>
+                                            <option value="refunded" {{ 'selected' if order.status == 'refunded' }}>Refunded</option>
+                                        </select>
+                                    </form>
+                                </td>
+                                <!-- In the Actions column -->
+                                <td>
+                                <a href="{{ url_for('admin.order_details', order_id=order.id) }}" 
+                                    class="btn btn-info btn-sm me-2">
+                                    <i class="fas fa-eye"></i> Details
+                                    </a>
+                                    <form method="POST" action="{{ url_for('admin.update_order_status', order_id=order.id) }}" class="d-inline">
+                                 <!-- existing status form -->
+                                </form>
+                                </td>
+
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination for Orders -->
+                {% if orders.pages > 1 %}
+                    <nav aria-label="Orders pagination">
+                        <ul class="pagination justify-content-center">
+                            {% if orders.has_prev %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('admin.view_orders', page=orders.prev_num, status=status_filter) }}">Previous</a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for page_num in orders.iter_pages() %}
+                                {% if page_num %}
+                                    {% if page_num != orders.page %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('admin.view_orders', page=page_num, status=status_filter) }}">{{ page_num }}</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page_num }}</span>
+                                        </li>
+                                    {% endif %}
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if orders.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('admin.view_orders', page=orders.next_num, status=status_filter) }}">Next</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No orders found</h4>
+                    <p class="text-muted">Orders will appear here when customers make purchases.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

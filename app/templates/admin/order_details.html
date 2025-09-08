@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Order #{{ order.id }} Details - Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <h2>Order #{{ order.id }} Details</h2>
+            
+            <!-- Order Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Order Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Customer:</strong> {{ order.user.username }}</p>
+                    <p><strong>Email:</strong> {{ order.user.email }}</p>
+                    <p><strong>Status:</strong> <span class="badge bg-primary">{{ order.status.title() }}</span></p>
+                    <p><strong>Total Amount:</strong> ${{ "%.2f"|format(order.total_amount) }}</p>
+                    <p><strong>Order Date:</strong> {{ order.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                </div>
+            </div>
+
+            <!-- Payment Information -->
+            {% if order.payment %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Payment Details</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Payment Method:</strong> {{ order.payment.payment_method.title() }}</p>
+                    <p><strong>Transaction ID:</strong> {{ order.payment.transaction_id }}</p>
+                    <p><strong>Payment Status:</strong> 
+                        <span class="badge bg-success">{{ order.payment.status.title() }}</span>
+                    </p>
+                    <p><strong>Amount Paid:</strong> ${{ "%.2f"|format(order.payment.amount) }}</p>
+                    <p><strong>Payment Date:</strong> {{ order.payment.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-warning">
+                <strong>No payment information available</strong>
+            </div>
+            {% endif %}
+
+            <!-- Order Items -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Ordered Items</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Book</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.items %}
+                                <tr>
+                                    <td>{{ item.book.title }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>${{ "%.2f"|format(item.price) }}</td>
+                                    <td>${{ "%.2f"|format(item.quantity * item.price) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <a href="{{ url_for('admin.view_orders') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Orders
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

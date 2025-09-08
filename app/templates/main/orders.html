@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}My Orders - BooksCart{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="fas fa-shopping-bag me-2"></i>My Orders
+            </h2>
+            
+            {% if orders.items %}
+                {% for order in orders.items %}
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Order #{{ order.id }}</strong>
+                            <small class="text-muted">{{ order.created_at.strftime('%B %d, %Y at %I:%M %p') }}</small>
+                        </div>
+                        <span class="badge 
+                            {% if order.status == 'delivered' %}bg-success
+                            {% elif order.status == 'in_progress' %}bg-primary
+                            {% elif order.status == 'delayed' %}bg-warning
+                            {% elif order.status == 'cancelled' %}bg-danger
+                            {% else %}bg-secondary{% endif %}">
+                            {{ order.status.title().replace('_', ' ') }}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6>Items:</h6>
+                                <ul class="list-unstyled">
+                                    {% for item in order.items %}
+                                    <li>{{ item.book.title }} × {{ item.quantity }} - ${{ "%.2f"|format(item.price * item.quantity) }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <h5>Total: ${{ "%.2f"|format(order.total_amount) }}</h5>
+                                {% if order.status == 'delayed' %}
+                                    <button class="btn btn-success btn-sm me-2" onclick="orderAction({{ order.id }}, 'accept')">Accept</button>
+                                    <button class="btn btn-danger btn-sm" onclick="orderAction({{ order.id }}, 'decline')">Decline</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Pagination -->
+                {% if orders.pages > 1 %}
+                <nav aria-label="Orders pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if orders.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.user_orders', page=orders.prev_num) }}">Previous</a>
+                            </li>
+                        {% endif %}
+                        {% for page_num in orders.iter_pages() %}
+                            {% if page_num %}
+                                {% if page_num != orders.page %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('main.user_orders', page=page_num) }}">{{ page_num }}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        {% if orders.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('main.user_orders', page=orders.next_num) }}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No orders yet</h4>
+                    <p class="text-muted">Start shopping to see your orders here!</p>
+                    <a href="{{ url_for('main.books') }}" class="btn btn-primary">Browse Books</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function orderAction(orderId, action) {
+    fetch(`/payment/order-action/${orderId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({action: action})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert(data.message, 'success');
+            location.reload();
+        } else {
+            showAlert(data.message, 'danger');
+        }
+    });
+}
+</script>
+{% endblock %}
