@@ -17,11 +17,12 @@ def books():
     query = Book.query
     
     if search:
+        from sqlalchemy import cast, String
         query = query.filter(
             db.or_(
-                Book.title.contains(search),
-                Book.author.contains(search),
-                Book.genre.contains(search)
+                Book.title.ilike(f'%{search}%'),           
+                Book.author.ilike(f'%{search}%'),         
+                cast(Book.genre, String).ilike(f'%{search}%')
             )
         )
     
