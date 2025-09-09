@@ -1,8 +1,8 @@
-"""Initial migration with genres
+"""chatbot code added
 
-Revision ID: 7578603232c7
+Revision ID: 73d098f05ff3
 Revises: 
-Create Date: 2025-09-08 16:43:18.960154
+Create Date: 2025-09-10 00:20:17.400223
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '7578603232c7'
+revision = '73d098f05ff3'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -37,6 +37,7 @@ def upgrade():
     sa.Column('password_hash', sa.String(length=255), nullable=True),
     sa.Column('role', sa.String(length=20), nullable=False),
     sa.Column('github_id', sa.String(length=50), nullable=True),
+    sa.Column('is_admin', sa.Boolean(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),

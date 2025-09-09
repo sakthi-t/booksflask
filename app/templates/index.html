@@ -1,5 +1,10 @@
 {% extends "base.html" %}
 
+{% block extra_head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<meta name="user-logged-in" content="{{ 'true' if session.get('user_id') else 'false' }}">
+{% endblock %}
+
 {% block content %}
 <!-- Hero Section -->
 <section class="hero-section bg-primary text-white py-5">
@@ -82,4 +87,633 @@
         </div>
     </div>
 </section>
+
+<!-- Chatbot Widget - ONLY ON HOMEPAGE -->
+<div id="chatbot-widget" class="chatbot-widget">
+    <!-- Chat Toggle Button -->
+    <div id="chat-toggle" class="chat-toggle" onclick="toggleChat()">
+        <div class="chat-toggle-content">
+            <i class="fas fa-comments"></i>
+            <span id="chat-toggle-text">Chat with Taylor</span>
+            <span class="notification-dot" id="notification-dot" style="display: none;"></span>
+        </div>
+    </div>
+
+    <!-- Chat Window -->
+    <div id="chat-window" class="chat-window">
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <div class="chat-avatar">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="chat-info">
+                <h6 class="mb-0">Taylor</h6>
+                <small class="text-muted">BooksCart Assistant</small>
+            </div>
+            <div class="chat-controls">
+                <button class="btn btn-sm" onclick="minimizeChat()" title="Minimize">
+                    <i class="fas fa-minus text-white"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Chat Messages -->
+        <div id="chat-messages" class="chat-messages">
+            <div class="message bot-message">
+                <div class="message-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="message-content">
+                    <p>Hi! I'm Taylor, your BooksCart assistant. 
+                    {% if session.get('user_id') %}
+                        Welcome back! How can I help you today?
+                        {% if session.get('user_email') == 't.shakthi@gmail.com' %}
+                        <small class="text-muted d-block">As an admin, I can help you with sales data and user information.</small>
+                        {% endif %}
+                    {% else %}
+                        To access my full features, please login first. However, I can help you reset your password if you've forgotten it.
+                    {% endif %}
+                    </p>
+                </div>
+                <div class="message-time">Just now</div>
+            </div>
+        </div>
+
+        <!-- Password Reset Modal -->
+        <div id="password-reset-modal" class="password-reset-modal" style="display: none;">
+            <div class="modal-content">
+                <h6>Reset Password</h6>
+                <p>Enter your registered email address:</p>
+                <input type="email" id="reset-email" class="form-control form-control-sm mb-2" 
+                       placeholder="your.email@example.com">
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-primary flex-fill" onclick="sendResetEmail()">
+                        Send Reset Link
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="closeResetModal()">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Input -->
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <input type="text" id="chat-input" class="chat-input" 
+                       placeholder="Type a message..." maxlength="500">
+                <button id="send-button" class="send-button" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            <div class="chat-suggestions" id="chat-suggestions">
+                {% if session.get('user_id') %}
+                    <button class="suggestion-btn" onclick="sendSuggestion('What books do you have?')">
+                        📚 Available Books
+                    </button>
+                    <button class="suggestion-btn" onclick="sendSuggestion('Show my orders')">
+                        📦 My Orders
+                    </button>
+                    <button class="suggestion-btn" onclick="sendSuggestion('What genres are available?')">
+                        🏷️ Book Genres
+                    </button>
+                    {% if session.get('user_email') == 't.shakthi@gmail.com' %}
+                        <button class="suggestion-btn" onclick="sendSuggestion('Show sales data')">
+                            📊 Sales Data
+                        </button>
+                    {% endif %}
+                {% else %}
+                    <button class="suggestion-btn" onclick="sendSuggestion('I forgot my password')">
+                        🔐 Reset Password
+                    </button>
+                    <button class="suggestion-btn" onclick="sendSuggestion('How can I create an account?')">
+                        👤 Sign Up
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.chatbot-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1050;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.chat-toggle {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0, 123, 255, 0.3);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.chat-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(0, 123, 255, 0.4);
+}
+
+.chat-toggle-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+}
+
+.notification-dot {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 12px;
+    height: 12px;
+    background: #dc3545;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.chat-window {
+    display: none;
+    width: 380px;
+    height: 520px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e0e6ed;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    flex-direction: column;
+}
+
+.chat-window.show {
+    display: flex;
+}
+
+.chat-header {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 15px 15px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.chat-avatar {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.chat-info {
+    flex: 1;
+}
+
+.chat-controls button {
+    background: none;
+    border: none;
+    color: white;
+    padding: 5px;
+    border-radius: 3px;
+    transition: background 0.2s;
+}
+
+.chat-controls button:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background: #f8f9fa;
+    max-height: 340px;
+}
+
+.message {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.bot-message .message-avatar {
+    background: #007bff;
+    color: white;
+}
+
+.user-message .message-avatar {
+    background: #28a745;
+    color: white;
+}
+
+.user-message {
+    flex-direction: row-reverse;
+}
+
+.message-content {
+    background: white;
+    padding: 10px 15px;
+    border-radius: 18px;
+    max-width: 80%;
+    word-wrap: break-word;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.user-message .message-content {
+    background: #007bff;
+    color: white;
+}
+
+.message-content p {
+    margin: 0;
+    line-height: 1.4;
+}
+
+.message-time {
+    font-size: 11px;
+    color: #6c757d;
+    align-self: flex-end;
+    margin: 0 5px;
+}
+
+.password-reset-modal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.password-reset-modal .modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 300px;
+}
+
+.chat-input-container {
+    padding: 15px 20px;
+    background: white;
+    border-radius: 0 0 15px 15px;
+    border-top: 1px solid #e0e6ed;
+}
+
+.chat-input-wrapper {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.chat-input {
+    flex: 1;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.chat-input:focus {
+    border-color: #007bff;
+}
+
+.send-button {
+    width: 40px;
+    height: 40px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.send-button:hover {
+    background: #0056b3;
+}
+
+.send-button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.chat-suggestions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.suggestion-btn {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.suggestion-btn:hover {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 15px;
+}
+
+.typing-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #007bff;
+    animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes typing {
+    0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+    40% { transform: scale(1); opacity: 1; }
+}
+
+@media (max-width: 768px) {
+    .chatbot-widget {
+        bottom: 15px;
+        right: 15px;
+    }
+    
+    .chat-window {
+        width: 340px;
+        height: 480px;
+    }
+}
+</style>
+
+<script>
+let chatOpen = false;
+let isTyping = false;
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('chat-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    scrollToBottom();
+});
+
+function toggleChat() {
+    const chatWindow = document.getElementById('chat-window');
+    const chatToggle = document.getElementById('chat-toggle');
+    
+    chatOpen = !chatOpen;
+    
+    if (chatOpen) {
+        chatWindow.classList.add('show');
+        chatToggle.style.display = 'none';
+        document.getElementById('chat-input').focus();
+    } else {
+        chatWindow.classList.remove('show');
+        chatToggle.style.display = 'block';
+    }
+}
+
+function minimizeChat() {
+    toggleChat();
+}
+
+function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+    
+    if (!message || isTyping) return;
+    
+    addMessage(message, 'user');
+    input.value = '';
+    
+    showTyping();
+    
+    fetch('/chatbot/api/message', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        },
+        body: JSON.stringify({ message: message })
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideTyping();
+        
+        if (data.success) {
+            const response = data.response;
+            
+            if (response.show_email_input) {
+                showPasswordResetModal();
+            } else {
+                addMessage(response.message, 'bot');
+            }
+        } else {
+            addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+        }
+    })
+    .catch(error => {
+        hideTyping();
+        addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+        console.error('Chat error:', error);
+    });
+}
+
+function sendSuggestion(message) {
+    document.getElementById('chat-input').value = message;
+    sendMessage();
+}
+
+function addMessage(message, sender) {
+    const messagesContainer = document.getElementById('chat-messages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}-message`;
+    
+    const avatar = document.createElement('div');
+    avatar.className = 'message-avatar';
+    avatar.innerHTML = sender === 'bot' ? '<i class="fas fa-robot"></i>' : '<i class="fas fa-user"></i>';
+    
+    const content = document.createElement('div');
+    content.className = 'message-content';
+    
+    const formattedMessage = formatMessage(message);
+    content.innerHTML = formattedMessage;
+    
+    const time = document.createElement('div');
+    time.className = 'message-time';
+    time.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    messageDiv.appendChild(avatar);
+    messageDiv.appendChild(content);
+    messageDiv.appendChild(time);
+    
+    messagesContainer.appendChild(messageDiv);
+    scrollToBottom();
+}
+
+function formatMessage(message) {
+    return message
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>')
+        .replace(/• /g, '• ');
+}
+
+function showTyping() {
+    isTyping = true;
+    const messagesContainer = document.getElementById('chat-messages');
+    
+    const typingDiv = document.createElement('div');
+    typingDiv.id = 'typing-indicator';
+    typingDiv.className = 'message bot-message';
+    typingDiv.innerHTML = `
+        <div class="message-avatar">
+            <i class="fas fa-robot"></i>
+        </div>
+        <div class="message-content">
+            <div class="typing-indicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+    `;
+    
+    messagesContainer.appendChild(typingDiv);
+    scrollToBottom();
+}
+
+function hideTyping() {
+    isTyping = false;
+    const typingIndicator = document.getElementById('typing-indicator');
+    if (typingIndicator) {
+        typingIndicator.remove();
+    }
+}
+
+function scrollToBottom() {
+    const messagesContainer = document.getElementById('chat-messages');
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function showPasswordResetModal() {
+    document.getElementById('password-reset-modal').style.display = 'flex';
+}
+
+function closeResetModal() {
+    document.getElementById('password-reset-modal').style.display = 'none';
+    document.getElementById('reset-email').value = '';
+}
+
+function sendResetEmail() {
+    const email = document.getElementById('reset-email').value.trim();
+    
+    if (!email) {
+        alert('Please enter your email address');
+        return;
+    }
+    
+    const button = event.target;
+    button.disabled = true;
+    button.textContent = 'Sending...';
+    
+    fetch('/chatbot/api/password-reset', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        },
+        body: JSON.stringify({ email: email })
+    })
+    .then(response => response.json())
+    .then(data => {
+        closeResetModal();
+        addMessage(data.message, 'bot');
+    })
+    .catch(error => {
+        addMessage('Failed to send reset email. Please try again.', 'bot');
+        console.error('Reset email error:', error);
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.textContent = 'Send Reset Link';
+    });
+}
+
+function getCSRFToken() {
+    return document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+}
+
+document.addEventListener('click', function(event) {
+    const chatWidget = document.getElementById('chatbot-widget');
+    
+    if (chatOpen && !chatWidget.contains(event.target)) {
+        if (!document.getElementById('password-reset-modal').contains(event.target)) {
+            minimizeChat();
+        }
+    }
+});
+
+document.getElementById('chatbot-widget').addEventListener('click', function(event) {
+    event.stopPropagation();
+});
+</script>
 {% endblock %}

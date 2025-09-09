@@ -39,6 +39,13 @@ def create_app(config_class=Config):
     
     from app.payment import bp as payment_bp
     app.register_blueprint(payment_bp, url_prefix='/payment')
+
+    from app.chatbot import bp as chatbot_bp
+    app.register_blueprint(chatbot_bp, url_prefix='/chatbot')
+
+    # NEW: Register GitHub OAuth Blueprint
+    from app.oauth import github_bp
+    app.register_blueprint(github_bp, url_prefix='/login')
     
     
     return app

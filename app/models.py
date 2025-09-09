@@ -12,6 +12,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=True)  # Nullable for OAuth users
     role = db.Column(db.String(20), nullable=False, default='user')  # 'user' or 'admin'
     github_id = db.Column(db.String(50), unique=True, nullable=True)
+    is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships

@@ -5,6 +5,7 @@ from app.admin import bp
 from app.models import User, Book, Order, Payment, GenreEnum, OrderItem
 from app import db, scheduler
 from app.config import Config
+from sqlalchemy import func
 
 def admin_required(f):
     """Decorator to require admin role for routes"""
@@ -37,12 +38,14 @@ def dashboard():
     total_books = Book.query.count()
     total_users = User.query.filter_by(role='user').count()
     total_orders = Order.query.count()
+    total_revenue = db.session.query(func.sum(Order.total_amount)).filter(Order.status.in_(['completed', 'delivered'])).scalar() or 0
     recent_books = Book.query.order_by(Book.created_at.desc()).limit(5).all()
     
     stats = {
         'total_books': total_books,
         'total_users': total_users,
         'total_orders': total_orders,
+        'total_revenue': total_revenue,
         'recent_books': recent_books
     }
     
